@@ -1,0 +1,15 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY client/package*.json ./
+RUN npm install
+
+COPY client/src ./src
+COPY client/index.html ./
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npx", "serve", "-s", "build", "-l", "3000"]

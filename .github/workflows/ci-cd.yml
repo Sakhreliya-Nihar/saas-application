@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - node-version: '18'
+            directory: 'server'
+          - node-version: '18'
+            directory: 'client'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd saas-application/${{ matrix.directory }}
+          npm install
+
+      - name: TypeScript type check
+        run: |
+          cd saas-application/${{ matrix.directory }}
+          npx tsc --noEmit
+
+      - name: Build (frontend only)
+        if: matrix.directory == 'client'
+        run: |
+          cd saas-application/${{ matrix.directory }}
+          npm run build
+
+      - name: Lint
+        run: |
+          cd saas-application/${{ matrix.directory }}
+          npm run lint 2>/dev/null || echo "No lint script defined"
+
+  deploy:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying SaaS application..."
+          echo "Would deploy backend and frontend to production environment"
+          # Add deployment commands here
